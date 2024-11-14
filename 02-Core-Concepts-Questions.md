@@ -58,25 +58,184 @@ This document contains a set of core C++ concepts questions designed to assess a
 
 ### **C++11/14/17/20 Features**
 
+# Core Concepts - C++11/14/17/20 Features
+
 #### **Lambdas**
 - **What are lambda expressions and when would you use them?**
-  - Lambda expressions are anonymous functions that can capture variables from their surrounding scope and are often used in algorithms or functions expecting function pointers or callable objects.
-  - Syntax: `[capture](parameters) -> return_type { body }`
+  - **C++11**: Lambda expressions are anonymous functions that can capture variables from their surrounding scope and are often used in algorithms or functions expecting function pointers or callable objects.
+  - **Syntax**: `[capture](parameters) -> return_type { body }`
+  - **Example**:
+    ```cpp
+    auto add = [](int x, int y) { return x + y; };
+    std::cout << add(3, 4);  // Outputs: 7
+    ```
+  - **Use case**: Lambdas are commonly used in standard algorithms (e.g., `std::sort`, `std::for_each`), where passing a function object is needed but defining a separate function would be cumbersome.
 
-#### **Move Semantics and `std::move`**
-- **What is move semantics in C++ and how is it implemented?**
-  - Move semantics allow resources to be transferred rather than copied, which improves performance (especially for large objects). 
-  - The `std::move` function casts an object to an rvalue reference, allowing the transfer of ownership.
+- **What is the difference between capturing by reference and by value in lambdas?**
+  - **C++11**: A lambda can capture variables either by reference or by value:
+    - **Capture by reference** (`&`): The lambda accesses the original variable, and any modifications affect the captured variable outside the lambda.
+    - **Capture by value** (`=`): The lambda copies the value of the variable at the time of the capture, and changes inside the lambda do not affect the original variable.
+  - **Example**:
+    ```cpp
+    int a = 5, b = 10;
+    auto lambda_ref = [&a, b](int x) { return a + b + x; };
+    auto lambda_val = [a, b](int x) { return a + b + x; };
+    a = 15;
+    std::cout << lambda_ref(5);  // Outputs: 30 (a is modified)
+    std::cout << lambda_val(5);  // Outputs: 20 (a is not modified)
+    ```
 
-#### **`std::unique_ptr` and `std::shared_ptr`**
-- **How do `std::unique_ptr` and `std::shared_ptr` help manage memory in C++?**
-  - `std::unique_ptr` ensures that only one pointer owns the object at a time and automatically deallocates the memory when it goes out of scope.
-  - `std::shared_ptr` allows multiple pointers to share ownership of an object, and it automatically deletes the object when the last shared pointer is destroyed.
+- **What are generic lambdas introduced in C++14?**
+  - **C++14**: C++14 allows lambdas to be more generic by enabling the use of `auto` in the parameter list. This allows lambdas to work with any type of argument.
+  - **Syntax**: `[capture](auto param1, auto param2) { return param1 + param2; }`
+  - **Example**:
+    ```cpp
+    auto add = [](auto x, auto y) { return x + y; };
+    std::cout << add(3, 4);     // Outputs: 7
+    std::cout << add(3.5, 4.5); // Outputs: 8.0
+    ```
 
-#### **`std::optional` and `std::variant`**
-- **What is the difference between `std::optional` and `std::variant`?**
-  - **`std::optional<T>`** represents a value that may or may not be present. It is used when a value is optional.
-  - **`std::variant<T1, T2, ...>`** is a type-safe union that can hold one of several types, providing a way to store and manipulate data of multiple types in a single variable.
+- **What are lambdas with template parameters introduced in C++20?**
+  - **C++20**: In C++20, lambdas can have template parameters, allowing for even more flexibility. This allows lambdas to be type-generic and behave like template functions.
+  - **Syntax**: `[]<typename T>(T x, T y) { return x + y; }`
+  - **Example**:
+    ```cpp
+    auto add = []<typename T>(T x, T y) { return x + y; };
+    std::cout << add(3, 4);    // Outputs: 7 (int)
+    std::cout << add(3.5, 4.5); // Outputs: 8.0 (double)
+    ```
+
+---
+
+#### **Auto Keyword**
+- **What is the purpose of the `auto` keyword in C++11?**
+  - **C++11**: The `auto` keyword is used to automatically deduce the type of a variable from its initializer. It simplifies code, especially when dealing with complex iterator types or template-based code.
+  - **Example**:
+    ```cpp
+    auto x = 10;  // x is of type int
+    auto y = 3.14; // y is of type double
+    std::vector<int>::iterator iter = vec.begin();
+    auto iter2 = vec.begin();  // auto deduces iterator type
+    ```
+
+- **What is `auto`'s role in function return type deduction in C++14?**
+  - **C++14**: C++14 introduces return type deduction for functions using the `auto` keyword. This allows the compiler to automatically deduce the return type of the function.
+  - **Example**:
+    ```cpp
+    auto add(int a, int b) { return a + b; } // return type deduced as int
+    std::cout << add(3, 4);  // Outputs: 7
+    ```
+
+---
+
+#### **Range-based for Loop**
+- **What is a range-based for loop and how does it improve code readability in C++11?**
+  - **C++11**: The range-based for loop provides a simpler way to iterate over containers without needing explicit iterators or index-based access. It automatically iterates over the elements of a container.
+  - **Syntax**: `for (auto& element : container) { // code }`
+  - **Example**:
+    ```cpp
+    std::vector<int> vec = {1, 2, 3, 4};
+    for (auto& num : vec) {
+        std::cout << num << " ";  // Outputs: 1 2 3 4
+    }
+    ```
+
+---
+
+#### **Move Semantics and Rvalue References**
+- **What are rvalue references and how do they enable move semantics in C++11?**
+  - **C++11**: Rvalue references (denoted by `&&`) allow you to distinguish between lvalues (objects that persist) and rvalues (temporary objects). This is useful for **move semantics**, which enables the transfer of resources (like dynamically allocated memory) from temporary objects to new objects, without copying.
+  - **Syntax**: `T&&`
+  - **Example**:
+    ```cpp
+    class MyClass {
+    public:
+        MyClass(std::vector<int>&& data) : data_(std::move(data)) {}  // Move constructor
+    private:
+        std::vector<int> data_;
+    };
+    std::vector<int> vec = {1, 2, 3};
+    MyClass obj(std::move(vec));  // Moves the vector into MyClass
+    ```
+
+- **How does the `std::move` function work in move semantics?**
+  - **C++11**: `std::move` is used to cast an object to an rvalue reference, enabling move semantics.
+  - **Example**:
+    ```cpp
+    std::vector<int> vec = {1, 2, 3};
+    std::vector<int> vec2 = std::move(vec);  // Moves resources from vec to vec2
+    ```
+
+---
+
+#### **Smart Pointers**
+- **What are smart pointers and how do they differ from regular pointers?**
+  - **C++11**: Smart pointers are wrappers around raw pointers that automatically manage the memory they point to. They prevent memory leaks by ensuring that memory is freed when no longer needed.
+  - **Types**:
+    - **`std::unique_ptr`**: Owns a resource exclusively (no shared ownership).
+    - **`std::shared_ptr`**: Allows shared ownership of a resource.
+    - **`std::weak_ptr`**: Non-owning reference to a `shared_ptr`, used to avoid circular references.
+  - **Example**:
+    ```cpp
+    std::unique_ptr<int> ptr = std::make_unique<int>(5);
+    std::shared_ptr<int> ptr2 = std::make_shared<int>(10);
+    ```
+
+---
+
+#### **`constexpr`**
+- **What is `constexpr` in C++11 and later, and how does it affect performance?**
+  - **C++11**: `constexpr` is used to define functions and variables that can be evaluated at compile time. This helps in optimizing performance by reducing runtime computations.
+  - **Example**:
+    ```cpp
+    constexpr int square(int x) { return x * x; }
+    int arr[square(10)];  // Size is computed at compile-time
+    ```
+
+- **How did `constexpr` evolve in C++14 and C++17?**
+  - **C++14**: Allowed more complex expressions inside `constexpr` functions, including loops and `if` statements.
+  - **C++17**: Introduced **`if constexpr`**, which allows conditional compilation based on constant expressions.
+  - **Example**:
+    ```cpp
+    template <typename T>
+    void print(T value) {
+        if constexpr (std::is_integral<T>::value) {
+            std::cout << "Integer: " << value;
+        } else {
+            std::cout << "Other type: " << value;
+        }
+    }
+    ```
+
+---
+
+#### **Structured Bindings (C++17)**
+- **What are structured bindings in C++17?**
+  - **C++17**: Structured bindings allow unpacking tuple-like objects (e.g., `std::pair`, `std::tuple`) into individual variables. This improves code readability and simplifies working with such types.
+  - **Example**:
+    ```cpp
+    std::pair<int, std::string> p = {1, "Hello"};
+    auto [x, y] = p;  // Unpacks the pair into x = 1 and y = "Hello"
+    std::cout << x << ", " << y;  // Outputs: 1, Hello
+    ```
+
+---
+
+#### **Concepts (C++20)**
+- **What are Concepts in C++20, and how do they improve template programming?**
+  - **C++20**: Concepts allow specifying constraints on template parameters. This makes template code more readable and easier to understand by providing more expressive error messages and ensuring that only types satisfying certain conditions are passed to templates.
+  - **Example**:
+    ```cpp
+    template <typename T>
+    concept Addable = requires(T a, T b) { a + b; };
+
+    template <Addable T>
+    T add(T a, T b) {
+        return a + b;
+    }
+
+    std::cout << add(3, 4);  // Works for integers
+    ```
 
 ---
 
